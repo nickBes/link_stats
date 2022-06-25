@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react"
+import Cookies from "js-cookie"
 import { AuthData } from "@/bindings/client"
-import ServerMessage, { Registered, throwIfError } from "@/bindings/server"
+import ServerMessage, { JWT, throwIfError } from "@/bindings/server"
 import ky from "ky"
 import { isMatching, P } from "ts-pattern"
 
@@ -8,7 +9,7 @@ const registrationPath = import.meta.env.VITE_SERVER_URL + '/auth/register'
 
 const Register : React.FC = () => {
     const form = useRef<HTMLFormElement | null>(null)
-    const [registered, setRegistered] = useState<Registered | null>(null)
+    const [registered, setRegistered] = useState<JWT | null>(null)
 
     useEffect(() => {
         async function register (event: SubmitEvent) {
@@ -25,11 +26,12 @@ const Register : React.FC = () => {
 
                     let safeMessage = throwIfError(serverMessage)
             
-                    if (isMatching({registeredUserId: P.number}, safeMessage)) { // check whether we recieved the right type from server
-                        setRegistered(serverMessage)
+                    if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
+                        setRegistered(safeMessage)
+                        Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
+                    } else {
+                        throw `Recieved unexpected message from the server: ${safeMessage}`
                     }
-            
-                    throw `Recieved unexpected message from the server: ${safeMessage}`
                 }
             }
         }
