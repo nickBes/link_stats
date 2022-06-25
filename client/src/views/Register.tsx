@@ -9,7 +9,7 @@ const registrationPath = import.meta.env.VITE_SERVER_URL + '/auth/register'
 
 const Register : React.FC = () => {
     const form = useRef<HTMLFormElement | null>(null)
-    const [registered, setRegistered] = useState<JWT | null>(null)
+    const [registered, setRegistered] = useState<boolean>(false)
 
     useEffect(() => {
         async function register (event: SubmitEvent) {
@@ -27,7 +27,7 @@ const Register : React.FC = () => {
                     let safeMessage = throwIfError(serverMessage)
             
                     if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
-                        setRegistered(safeMessage)
+                        setRegistered(true)
                         Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
                     } else {
                         throw `Recieved unexpected message from the server: ${safeMessage}`
