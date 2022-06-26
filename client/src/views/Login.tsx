@@ -4,6 +4,7 @@ import { AuthData } from "@/bindings/client"
 import ServerMessage, { JWT, throwIfError } from "@/bindings/server"
 import ky from "ky"
 import { isMatching, P } from "ts-pattern"
+import { jwt } from "src/states"
 
 const loginPath = import.meta.env.VITE_SERVER_URL + '/auth/login'
 
@@ -29,6 +30,7 @@ const Login : React.FC = () => {
                     if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
                         setLogged(true)
                         Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
+                        jwt.token = safeMessage.token
                     } else {
                         throw `Recieved unexpected message from the server: ${safeMessage}`
                     }
