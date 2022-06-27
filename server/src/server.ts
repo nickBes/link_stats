@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Request, RequestHandler } from "express"
 import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
@@ -73,6 +73,45 @@ app.post('/auth/register', async (req, res) => {
     // save new user and update the client with the id + jwt token
     let user = await prisma.user.create({data: {name: request.username, password: hashedPassword}})
     res.send(generateJWT(user.id))
+})
+
+interface AuthorizedRequest extends Request {
+    userId?: number
+}
+
+interface CreateLinkRequest extends AuthorizedRequest {
+    body: {
+        url: string
+    }
+}
+
+const isAuthorized : RequestHandler = async (req: AuthorizedRequest, res, next) => {
+    let token = req.headers.authorization
+    let err: ServerError = {errorMessage: "Authorization token isn't passed"}
+    if (token == undefined) {
+        res.send(err)
+        return
+    }
+    try {
+        // before we start express we check if the secret is undefined, so we're allowed to cast it into string
+        let decoded : any = jwt.verify(token, process.env.JWT_SECRET as string)
+        if (!isMatching({id: P.number}, decoded)) {
+            err.errorMessage = "Couldn't find user id inside the autorization token"
+            res.send(err)
+            return
+        }
+
+        req.userId = decoded.id
+        next()
+    } catch (e) {
+        err.errorMessage = `Coulden't verify authorization token with error: ${e}`
+        return
+    }
+}
+
+app.post('/link/create', isAuthorized , async (req: CreateLinkRequest, res) => {
+    // test
+    res.send({k: `Ok: ${req.body.url}, ${req.userId}`})
 })
 
 if (process.env.JWT_SECRET != undefined) {

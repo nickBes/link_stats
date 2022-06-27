@@ -6,7 +6,6 @@ import { jwt } from './states'
 import App from './App'
 import Login from './views/Login'
 import Register from  './views/Register'
-import { useSnapshot } from 'valtio'
 
 const Main : React.FC = () => {
     useEffect(() => {
