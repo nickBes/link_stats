@@ -9,8 +9,6 @@ import Register from  './views/Register'
 import { useSnapshot } from 'valtio'
 
 const Main : React.FC = () => {
-    const jwtState = useSnapshot(jwt)
-
     useEffect(() => {
         let cookieJwt = Cookies.get('jwt')
         if (cookieJwt != undefined) {
@@ -23,11 +21,8 @@ const Main : React.FC = () => {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<App/>}>
-                        {jwtState.token && <>
-                                    <Route path="/login" element={<Login/>}/>
-                                    <Route path="/register" element={<Register/>}/>
-                        </>}
-
+                        <Route path="/login" element={<Login/>}/>
+                        <Route path="/register" element={<Register/>}/>
                     </Route>
                 </Routes>
             </BrowserRouter>

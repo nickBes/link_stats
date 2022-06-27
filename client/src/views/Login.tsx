@@ -1,18 +1,25 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef } from "react"
 import Cookies from "js-cookie"
 import { AuthData } from "@/bindings/client"
-import ServerMessage, { JWT, throwIfError } from "@/bindings/server"
+import ServerMessage, { throwIfError } from "@/bindings/server"
 import ky from "ky"
+import { useNavigate } from "react-router-dom"
 import { isMatching, P } from "ts-pattern"
-import { jwt } from "src/states"
+import { jwt } from "@/states"
+import { useSnapshot } from "valtio"
 
 const loginPath = import.meta.env.VITE_SERVER_URL + '/auth/login'
 
 const Login : React.FC = () => {
     const form = useRef<HTMLFormElement | null>(null)
-    const [logged, setLogged] = useState<boolean>(false)
+    let navigate = useNavigate()
+    const jwtState = useSnapshot(jwt)
 
     useEffect(() => {
+        if (jwtState.token != null) {
+            navigate('/', {replace: true})
+        }
+
         async function login (event: SubmitEvent) {
             event.preventDefault()
 
@@ -28,8 +35,8 @@ const Login : React.FC = () => {
                     let safeMessage = throwIfError(serverMessage)
             
                     if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
-                        setLogged(true)
                         Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
+                        navigate('/', {replace: true})
                         jwt.token = safeMessage.token
                     } else {
                         throw `Recieved unexpected message from the server: ${safeMessage}`
@@ -50,7 +57,6 @@ const Login : React.FC = () => {
                 <input type='password' name='password' placeholder='password'/>
                 <button type='submit'>Submit</button>
             </form>
-            <p>{logged && 'logged successfuly'}</p>
         </>
     )
 }

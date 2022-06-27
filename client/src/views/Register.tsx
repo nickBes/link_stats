@@ -1,17 +1,26 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef } from "react"
 import Cookies from "js-cookie"
 import { AuthData } from "@/bindings/client"
-import ServerMessage, { JWT, throwIfError } from "@/bindings/server"
+import ServerMessage, { throwIfError } from "@/bindings/server"
 import ky from "ky"
 import { isMatching, P } from "ts-pattern"
+import { useNavigate } from "react-router-dom"
+import { jwt } from "@/states"
+import { useSnapshot } from 'valtio'
 
 const registrationPath = import.meta.env.VITE_SERVER_URL + '/auth/register'
 
 const Register : React.FC = () => {
     const form = useRef<HTMLFormElement | null>(null)
-    const [registered, setRegistered] = useState<boolean>(false)
+    let navigate = useNavigate()
+    const jwtState = useSnapshot(jwt)
+
 
     useEffect(() => {
+        if (jwtState.token != null) {
+            navigate('/', {replace: true})
+        }
+
         async function register (event: SubmitEvent) {
             event.preventDefault()
 
@@ -27,8 +36,9 @@ const Register : React.FC = () => {
                     let safeMessage = throwIfError(serverMessage)
             
                     if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
-                        setRegistered(true)
                         Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
+                        navigate('/', {replace: true})
+                        jwt.token = safeMessage.token
                     } else {
                         throw `Recieved unexpected message from the server: ${safeMessage}`
                     }
@@ -38,7 +48,7 @@ const Register : React.FC = () => {
 
         form.current?.addEventListener('submit', register)
         return () => form.current?.removeEventListener('submit', register)
-    })
+    }, [])
 
     return (
         <>
@@ -48,7 +58,6 @@ const Register : React.FC = () => {
                 <input type='password' name='password' placeholder='password'/>
                 <button type='submit'>Submit</button>
             </form>
-            <p>{registered && 'registered successfuly'}</p>
         </>
     )
 }
