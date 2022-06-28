@@ -3,6 +3,10 @@ export interface AuthData {
     password: string
 }
 
-type ClientMessage = AuthData
+export interface CreateLink {
+    url: string
+}
+
+type ClientMessage = AuthData | CreateLink
 
 export default ClientMessage

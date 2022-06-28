@@ -14,4 +14,12 @@ model User {
     id       Int    @id @default(autoincrement())
     name     String	@unique
     password String
+    links Link[]
+}
+
+model Link {
+    id Int @id @default(autoincrement())
+    url String
+    owner User @relation(fields: [ownerId], references: [id])
+    ownerId Int
 }

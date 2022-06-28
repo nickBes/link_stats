@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client"
 import { JWT, ServerError } from "@/bindings/server"
 import { isMatching, P } from "ts-pattern"
 import ClientMessage from "@/bindings/client"
+// import urlExist from "url-exist"
 
 const prisma = new PrismaClient()
 const app = express()
@@ -17,30 +18,33 @@ const JWT_MAX_AGE_SECONDS = 60 * 60 * 24 * JWT_MAX_AGE_DAYS
 app.use(cors())
 app.use(bodyParser.json())
 
-function generateJWT (id:number) : JWT {
+interface ClientRequest extends Request {
+    body: ClientMessage
+}
+
+function generateJWT(id:number) : JWT {
     // we're checking whether the secret exists before starting express, hence we can cast it into string
     let token = jwt.sign({id}, process.env.JWT_SECRET as string, {expiresIn: JWT_MAX_AGE_SECONDS})
     return {token, age: JWT_MAX_AGE_DAYS}
 }
 
-app.post('/auth/login', async (req, res) => {
-    let request = req.body as ClientMessage
+app.post('/auth/login', async (req : ClientRequest, res) => {
     let err : ServerError
 
-    if (!isMatching({username: P.string, password: P.string}, request)) {
+    if (!isMatching({username: P.string, password: P.string}, req.body)) {
         err = {errorMessage: "Haven't recieved the right input"}
         res.send(err)
         return
     }
 
     err = {errorMessage: 'Incorrect username or password'}
-    let existingUser = await prisma.user.findUnique({where: {name: request.username}})
+    let existingUser = await prisma.user.findUnique({where: {name: req.body.username}})
     if (existingUser == null) { // then user doesn't exist
         res.send(err)
         return
     }
 
-    let passwordMatches = await bcrypt.compare(request.password, existingUser.password)
+    let passwordMatches = await bcrypt.compare(req.body.password, existingUser.password)
     if (passwordMatches == false) { // then password don't match
         res.send(err)
         return
@@ -50,46 +54,39 @@ app.post('/auth/login', async (req, res) => {
     res.send(generateJWT(existingUser.id))
 })
 
-app.post('/auth/register', async (req, res) => {
-    let request = req.body as ClientMessage
+app.post('/auth/register', async (req: ClientRequest, res) => {
     let err : ServerError
 
-    if (!isMatching({username: P.string, password: P.string}, request)) {
+    if (!isMatching({username: P.string, password: P.string}, req.body)) {
         err = {errorMessage: "Haven't recieved the right input"}
         res.send(err)
         return
     }
 
-    let existingUser = await prisma.user.findUnique({where: {name: request.username}})
+    let existingUser = await prisma.user.findUnique({where: {name: req.body.username}})
     if (existingUser != null) { // then user already exists
-        err = {errorMessage: `Username ${request.username} already exists`}
+        err = {errorMessage: `Username ${req.body.username} already exists`}
         res.send(err)
         return
     }
 
     // generate hash of the password with one salt round
-    let hashedPassword = await bcrypt.hash(request.password, 1)
+    let hashedPassword = await bcrypt.hash(req.body.password, 1)
 
     // save new user and update the client with the id + jwt token
-    let user = await prisma.user.create({data: {name: request.username, password: hashedPassword}})
+    let user = await prisma.user.create({data: {name: req.body.username, password: hashedPassword}})
     res.send(generateJWT(user.id))
 })
 
-interface AuthorizedRequest extends Request {
+interface AuthorizedRequest extends ClientRequest {
     userId?: number
 }
 
-interface CreateLinkRequest extends AuthorizedRequest {
-    body: {
-        url: string
-    }
-}
-
-const isAuthorized : RequestHandler = async (req: AuthorizedRequest, res, next) => {
+const authHandler : RequestHandler = async (req: AuthorizedRequest, res, next) => {
     let token = req.headers.authorization
     let err: ServerError = {errorMessage: "Authorization token isn't passed"}
     if (token == undefined) {
-        res.send(err)
+        res.send(err).end()
         return
     }
     try {
@@ -97,21 +94,42 @@ const isAuthorized : RequestHandler = async (req: AuthorizedRequest, res, next) 
         let decoded : any = jwt.verify(token, process.env.JWT_SECRET as string)
         if (!isMatching({id: P.number}, decoded)) {
             err.errorMessage = "Couldn't find user id inside the autorization token"
-            res.send(err)
+            res.send(err).end()
             return
         }
 
+        // this means that the user id will be passed through the request only
+        // if all of the conditions are met
         req.userId = decoded.id
         next()
     } catch (e) {
         err.errorMessage = `Coulden't verify authorization token with error: ${e}`
+        res.send(err).end()
         return
     }
 }
 
-app.post('/link/create', isAuthorized , async (req: CreateLinkRequest, res) => {
+app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
+    // auth handler makes sure to call this function after user ID is defined
+    // so we can force a cast on it
+    let userId = req.userId as number
+    let err: ServerError
+    if (!isMatching({url: P.string}, req.body)) {
+        err = {errorMessage: "Haven't recieved the right format for creating a new link"}
+        res.send(err).end()
+        return
+    }
+    let urlExists = true
+    // let urlExists = await urlExist(req.body.url)
+    if (!urlExists) {
+        err = {errorMessage: "The fiven URL doesn't exists"}
+        res.send(err).end()
+        return
+    }
+
+    let createdUrl = await prisma.link.create({data: {url: req.body.url, ownerId: userId}})
     // test
-    res.send({k: `Ok: ${req.body.url}, ${req.userId}`})
+    res.send(createdUrl)
 })
 
 if (process.env.JWT_SECRET != undefined) {
