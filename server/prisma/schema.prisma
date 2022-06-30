@@ -22,4 +22,13 @@ model Link {
     url String
     owner User @relation(fields: [ownerId], references: [id])
     ownerId Int
+    visits Visit[]
+}
+
+model Visit {
+    id Int @id @default(autoincrement())
+    date DateTime @default(now())
+    country String @db.VarChar(2)
+    link Link @relation(fields: [linkId], references: [id])
+    linkId Int
 }

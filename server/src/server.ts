@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client"
 import ServerMessage, { CreatedLink, intoResultAsync, JWT, ServerError } from "../bindings/server"
 import { isMatching, P } from "ts-pattern"
 import ClientMessage from "../bindings/client"
+import { lookup } from "geoip-lite"
 
 const prisma = new PrismaClient()
 const app = express()
@@ -194,7 +195,7 @@ app.get('/link/:linkId', async (req: Request<{linkId: string}>, res) => {
         return
     }
 
-    let id = parseInt(req.params.linkId) // then haven't recieved a number
+    let id = parseInt(req.params.linkId)
     if (isNaN(id)) {
         res.sendStatus(404).end()
         return
@@ -206,6 +207,23 @@ app.get('/link/:linkId', async (req: Request<{linkId: string}>, res) => {
         return
     }
 
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    if (ip == undefined) {
+        res.sendStatus(404).end()
+        return
+    } 
+    let ipData = lookup(ip as string)
+    if (ipData == null) {
+        res.sendStatus(404).end()
+        return
+    }
+    let country = ipData.country
+    let visitResult = await intoResultAsync(async () => await prisma.visit.create({data: {country, linkId: id}}))
+
+    if (!visitResult.ok) {
+        res.sendStatus(404).end()
+        return
+    }
     res.redirect(urlResult.value.url)
 })
 
