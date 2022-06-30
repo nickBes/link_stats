@@ -7,6 +7,10 @@ export interface CreateLink {
     url: string
 }
 
-type ClientMessage = AuthData | CreateLink
+export interface DeleteLink {
+    linkId: number
+}
+
+type ClientMessage = AuthData | CreateLink | DeleteLink
 
 export default ClientMessage

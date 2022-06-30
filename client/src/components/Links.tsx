@@ -4,8 +4,9 @@ import { useSnapshot } from "valtio"
 import { isMatching, P } from "ts-pattern"
 import ServerMessage from "@/bindings/server"
 import ky from "ky"
+import { DeleteLink } from "@/bindings/client"
 
-const fetchLinkPath = import.meta.env.VITE_SERVER_URL + '/link/all'
+const linkPath = import.meta.env.VITE_SERVER_URL + '/link/'
 
 const Links : React.FC = () => {
     const jwtState = useSnapshot(jwt)
@@ -13,23 +14,38 @@ const Links : React.FC = () => {
 
     useEffect(() => {
         if (jwtState.token == null) return
-        
+
         async function fetchLinks() {
-            let res = await ky.get(fetchLinkPath, {headers: {Authorization: jwtState.token as string}}).json<ServerMessage>()
+            
+            let res = await ky.get(linkPath + 'all', {headers: {Authorization: jwtState.token as string}}).json<ServerMessage>()
             if (!isMatching({links: P.array({url: P.string})}, res)) return
             links.clear()
 
-            res.links.forEach(link => links.add(link))
+            res.links.forEach(link => links.set(link.id, link.url))
         }
 
         fetchLinks()
     }, [])
 
+    async function deleteLink(id:number) {
+        if (jwtState.token == null) return
+
+        let deleteLinkReq : DeleteLink = {linkId: id}
+        let res = await ky.delete(linkPath, {
+                                                json: deleteLinkReq,
+                                                headers: {Authorization: jwtState.token}
+                                            })
+                                            .json<ServerMessage>()
+
+        if (!isMatching({url: P.string}, res)) return
+        links.delete(id)
+    }
+
     return (
     <ul>
-        {[...linkState].map((link) => {
+        {[...linkState].map(([id, url]) => {
             return (
-                <li key={link.id}>Number {link.id}:<br/> <a href={link.url}>{link.url}</a></li>
+                <li key={id}>Number {id}:<br/> <a href={linkPath + id}>{url}</a><br/><button onClick={() => deleteLink(id)}>delete</button></li>
             )
         })}
     </ul>

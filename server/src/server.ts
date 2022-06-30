@@ -113,7 +113,7 @@ const authHandler : RequestHandler = async (req: AuthorizedRequest, res, next) =
     }
 }
 
-app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
+app.post('/link/', authHandler , async (req: AuthorizedRequest, res) => {
     // auth handler makes sure to call this function after user ID is defined
     // so we can force a cast on it
     let userId = req.userId as number
@@ -142,8 +142,35 @@ app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
     }
 
     let createdLink : CreatedLink = {id: urlResult.value.id, url}
-    // test
-    res.send(createdLink)
+    res.send(createdLink).end()
+})
+
+app.delete('/link/', authHandler, async (req:AuthorizedRequest, res: Response<ServerMessage>) => {
+    let userId = req.userId as number
+    let err: ServerError
+
+    if (!isMatching({linkId: P.number}, req.body)) {
+        err = {errorMessage: "Haven't recieved the right format for deleting a link."}
+        res.send(err).end()
+        return
+    }
+
+    let linkId = req.body.linkId
+    let urlResult = await intoResultAsync(async () => await prisma.link.findUnique({where: {id: linkId}}))
+    if (!urlResult.ok || urlResult.value?.ownerId != userId) {
+        err = {errorMessage: "Couldn't find the requested link."}
+        res.send(err).end()
+        return
+    }
+
+    let deletedUrlResult = await intoResultAsync(async () => await prisma.link.delete({where: {id: linkId}}))
+    if (!deletedUrlResult.ok) {
+        err = {errorMessage: `Couldn't delete link with error: ${deletedUrlResult.error}`}
+        res.send(err).end()
+        return
+    }
+
+    res.send({url: deletedUrlResult.value.url, id: linkId}).end()
 })
 
 app.get('/link/all/', authHandler, async (req: AuthorizedRequest, res: Response<ServerMessage>) => {
@@ -161,7 +188,7 @@ app.get('/link/all/', authHandler, async (req: AuthorizedRequest, res: Response<
     })}).end()
 })
 
-app.get('/link/visit/:linkId', async (req: Request<{linkId: string}>, res) => {
+app.get('/link/:linkId', async (req: Request<{linkId: string}>, res) => {
     if(!isMatching({linkId: P.string}, req.params)) {
         res.sendStatus(404).end()
         return
@@ -181,6 +208,7 @@ app.get('/link/visit/:linkId', async (req: Request<{linkId: string}>, res) => {
 
     res.redirect(urlResult.value.url)
 })
+
 
 if (process.env.JWT_SECRET != undefined) {
     app.listen(5000)

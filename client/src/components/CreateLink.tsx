@@ -5,7 +5,7 @@ import { isMatching, P } from "ts-pattern"
 import { jwt, links } from "@/states"
 import ky from "ky"
 
-const createLinkPath = import.meta.env.VITE_SERVER_URL + '/link/create'
+const createLinkPath = import.meta.env.VITE_SERVER_URL + '/link/'
 
 const CreateLink : React.FC = () => {
     const form = useRef<HTMLFormElement | null>(null)
@@ -23,7 +23,7 @@ const CreateLink : React.FC = () => {
             let res = await ky.post(createLinkPath, {json: {url}, headers: {Authorization: jwtState.token as string}}).json<ServerMessage>()
             if (!isMatching({url: P.string}, res)) return
             
-            links.add(res)
+            links.set(res.id, res.url)
         }
 
         form.current?.addEventListener('submit', createLink)
