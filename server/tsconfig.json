@@ -103,5 +103,5 @@
     "paths": {
       "@/bindings/*": ["./bindings/*"]
     },
-  }
+  },
 }

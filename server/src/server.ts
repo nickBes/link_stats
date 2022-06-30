@@ -4,9 +4,9 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import bodyParser from "body-parser"
 import { PrismaClient } from "@prisma/client"
-import { JWT, ServerError } from "@/bindings/server"
+import { intoResultAsync, JWT, ServerError } from "../bindings/server"
 import { isMatching, P } from "ts-pattern"
-import ClientMessage from "@/bindings/client"
+import ClientMessage from "../bindings/client"
 // import urlExist from "url-exist"
 
 const prisma = new PrismaClient()
@@ -26,6 +26,11 @@ function generateJWT(id:number) : JWT {
     // we're checking whether the secret exists before starting express, hence we can cast it into string
     let token = jwt.sign({id}, process.env.JWT_SECRET as string, {expiresIn: JWT_MAX_AGE_SECONDS})
     return {token, age: JWT_MAX_AGE_DAYS}
+}
+
+async function urlExists (url: string): Promise<boolean> {
+    let res = await fetch(url)
+    return res.status == 200
 }
 
 app.post('/auth/login', async (req : ClientRequest, res) => {
@@ -114,22 +119,45 @@ app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
     // so we can force a cast on it
     let userId = req.userId as number
     let err: ServerError
+
     if (!isMatching({url: P.string}, req.body)) {
         err = {errorMessage: "Haven't recieved the right format for creating a new link"}
         res.send(err).end()
         return
     }
-    let urlExists = true
-    // let urlExists = await urlExist(req.body.url)
-    if (!urlExists) {
-        err = {errorMessage: "The fiven URL doesn't exists"}
+
+    let isValidUrl = urlExists(req.body.url)
+    if (!isValidUrl) {
+        err = {errorMessage: "The given URL isn't valid"}
         res.send(err).end()
         return
     }
+    let url = req.body.url
 
-    let createdUrl = await prisma.link.create({data: {url: req.body.url, ownerId: userId}})
+    let urlResult = await intoResultAsync(async () => await prisma.link.create({data: {url, ownerId: userId}}))
     // test
-    res.send(createdUrl)
+    res.send(urlResult)
+})
+
+app.get('/link/visit/:linkId', async (req: Request<{linkId: string}>, res) => {
+    if(!isMatching({linkId: P.string}, req.params)) {
+        res.sendStatus(404).end()
+        return
+    }
+
+    let id = parseInt(req.params.linkId) // then haven't recieved a number
+    if (isNaN(id)) {
+        res.sendStatus(404).end()
+        return
+    }
+
+    let urlResult = await intoResultAsync(async () => await prisma.link.findUnique({where: {id}}))
+    if (!urlResult.ok || urlResult.value == null) {
+        res.sendStatus(404).end()
+        return
+    }
+
+    res.redirect(urlResult.value.url)
 })
 
 if (process.env.JWT_SECRET != undefined) {
