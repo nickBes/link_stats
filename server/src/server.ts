@@ -1,13 +1,12 @@
-import express, { Request, RequestHandler } from "express"
+import express, { Request, RequestHandler, Response } from "express"
 import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import bodyParser from "body-parser"
 import { PrismaClient } from "@prisma/client"
-import { intoResultAsync, JWT, ServerError } from "../bindings/server"
+import ServerMessage, { CreatedLink, intoResultAsync, JWT, ServerError } from "../bindings/server"
 import { isMatching, P } from "ts-pattern"
 import ClientMessage from "../bindings/client"
-// import urlExist from "url-exist"
 
 const prisma = new PrismaClient()
 const app = express()
@@ -126,7 +125,7 @@ app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
         return
     }
 
-    let isValidUrl = urlExists(req.body.url)
+    let isValidUrl = await urlExists(req.body.url)
     if (!isValidUrl) {
         err = {errorMessage: "The given URL isn't valid"}
         res.send(err).end()
@@ -135,8 +134,31 @@ app.post('/link/create', authHandler , async (req: AuthorizedRequest, res) => {
     let url = req.body.url
 
     let urlResult = await intoResultAsync(async () => await prisma.link.create({data: {url, ownerId: userId}}))
+
+    if (!urlResult.ok) {
+        err = {errorMessage: `Couldn't create link with error: ${urlResult.error}`}
+        res.send(err).end()
+        return
+    }
+
+    let createdLink : CreatedLink = {id: urlResult.value.id, url}
     // test
-    res.send(urlResult)
+    res.send(createdLink)
+})
+
+app.get('/link/all/', authHandler, async (req: AuthorizedRequest, res: Response<ServerMessage>) => {
+    let userId = req.userId as number
+    let allLinksResult = await intoResultAsync(async () => await prisma.link.findMany({where: {ownerId: userId}}))
+    if(!allLinksResult.ok) {
+        let err : ServerError  = {errorMessage: `Couldn't fetch all links with error: ${allLinksResult.error}`}
+        res.send(err).end()
+        return
+    }
+
+    res.send({links: allLinksResult.value.map(link => {
+        let parsedLink : CreatedLink = {url: link.url, id: link.id}
+        return parsedLink
+    })}).end()
 })
 
 app.get('/link/visit/:linkId', async (req: Request<{linkId: string}>, res) => {

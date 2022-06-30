@@ -1,11 +1,5 @@
 import { isMatching, P } from "ts-pattern"
 
-export interface JWT {
-    token: string,
-    // the age probably should be in .env, will do later
-    age: number // in days
-}
-
 interface RawResult {
     ok: boolean
 }
@@ -55,8 +49,22 @@ export interface ServerError {
     errorMessage: string
 }
 
-type ServerMessage = JWT | ServerError
+export interface JWT {
+    token: string,
+    // the age probably should be in .env, will do later
+    age: number // in days
+}
 
+export interface CreatedLink {
+    url: string,
+    id: number
+}
+
+export interface FetchedLinks {
+    links: CreatedLink[]
+}
+
+type ServerMessage = JWT | ServerError | CreatedLink | FetchedLinks
 
 export function throwIfError (serverMessage : ServerMessage) {
     if (isMatching({errorMessage: P.string}, serverMessage)) { // then error was detected

@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from "react"
 import ServerMessage from "@/bindings/server"
 import { useSnapshot } from "valtio"
-import { jwt } from "@/states"
+import { isMatching, P } from "ts-pattern"
+import { jwt, links } from "@/states"
 import ky from "ky"
 
 const createLinkPath = import.meta.env.VITE_SERVER_URL + '/link/create'
@@ -17,12 +18,12 @@ const CreateLink : React.FC = () => {
 
             let data = new FormData(form.current)
             let url = data.get("url")
-            if (typeof url != "string") {
-                return
-            }
+            if (typeof url != "string") return
 
-            let res =  await ky.post(createLinkPath, {json: {url}, headers: {Authorization: jwtState.token as string}}).json<ServerMessage>()
-            console.log(res)
+            let res = await ky.post(createLinkPath, {json: {url}, headers: {Authorization: jwtState.token as string}}).json<ServerMessage>()
+            if (!isMatching({url: P.string}, res)) return
+            
+            links.add(res)
         }
 
         form.current?.addEventListener('submit', createLink)

@@ -1,16 +1,19 @@
 import React from "react"
 import { useSnapshot } from "valtio"
-import { jwt } from "./states"
+import { jwt, links } from "./states"
 import { Link, Outlet } from "react-router-dom"
 import Cookies from "js-cookie"
 import CreateLink from "./components/CreateLink"
+import Links from "./components/Links"
 
 const App : React.FC = () => {
     const jwtState = useSnapshot(jwt)
+    const linkState = useSnapshot(links)
 
     function logout() {
         Cookies.remove('jwt')
         jwt.token = null
+        links.clear()
     }
 
     return (
@@ -21,6 +24,8 @@ const App : React.FC = () => {
                     <Link to='/login'>Login</Link>
                     <Link to='/register'>Register</Link>
                 </>}
+
+                {jwt.token != null && <Links/>}
 
                 {jwt.token != null && <CreateLink/>}
             </nav>
