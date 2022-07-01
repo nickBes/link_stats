@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import bodyParser from "body-parser"
 import { PrismaClient } from "@prisma/client"
-import ServerMessage, { CreatedLink, intoResultAsync, JWT, ServerError } from "../bindings/server"
+import ServerMessage, { CreatedLink, intoResultAsync, intoResult, JWT, ServerError } from "../bindings/server"
 import { isMatching, P } from "ts-pattern"
 import ClientMessage from "../bindings/client"
 import { lookup } from "geoip-lite"
@@ -90,28 +90,28 @@ interface AuthorizedRequest extends ClientRequest {
 const authHandler : RequestHandler = async (req: AuthorizedRequest, res, next) => {
     let token = req.headers.authorization
     let err: ServerError = {errorMessage: "Authorization token isn't passed"}
+
     if (token == undefined) {
         res.send(err).end()
         return
     }
-    try {
-        // before we start express we check if the secret is undefined, so we're allowed to cast it into string
-        let decoded : any = jwt.verify(token, process.env.JWT_SECRET as string)
-        if (!isMatching({id: P.number}, decoded)) {
-            err.errorMessage = "Couldn't find user id inside the autorization token"
-            res.send(err).end()
-            return
-        }
 
-        // this means that the user id will be passed through the request only
-        // if all of the conditions are met
-        req.userId = decoded.id
-        next()
-    } catch (e) {
-        err.errorMessage = `Coulden't verify authorization token with error: ${e}`
+    let decodedResult = intoResult(() => jwt.verify(token as string, process.env.JWT_SECRET as string))
+    
+    if (!decodedResult.ok) {
+        err.errorMessage = `Coulden't verify authorization token with error: ${decodedResult.error}`
         res.send(err).end()
         return
     }
+
+    if (!isMatching({id: P.number}, decodedResult.value)) {
+        err.errorMessage = "Couldn't find user id inside the autorization token"
+        res.send(err).end()
+        return
+    }
+
+    req.userId = decodedResult.value.id
+    next()
 }
 
 app.post('/link/', authHandler , async (req: AuthorizedRequest, res) => {
