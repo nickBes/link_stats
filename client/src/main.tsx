@@ -6,6 +6,7 @@ import { jwt } from './states'
 import App from './App'
 import Login from './views/Login'
 import Register from  './views/Register'
+import Stats from './views/Stats'
 
 const Main : React.FC = () => {
     useEffect(() => {
@@ -22,6 +23,9 @@ const Main : React.FC = () => {
                     <Route path="/" element={<App/>}>
                         <Route path="/login" element={<Login/>}/>
                         <Route path="/register" element={<Register/>}/>
+                        <Route path="/stats">
+                            <Route path=":id" element={<Stats/>}/>
+                        </Route>
                     </Route>
                 </Routes>
             </BrowserRouter>
