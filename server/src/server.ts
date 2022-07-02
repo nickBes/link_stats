@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import bodyParser from "body-parser"
 import { PrismaClient } from "@prisma/client"
-import ServerMessage, { CreatedLink, intoResultAsync, intoResult, JWT, ServerError } from "../bindings/server"
+import ServerMessage, { CreatedLink, intoResultAsync, intoResult, JWT, ServerError, CountryClickDist } from "../bindings/server"
 import { isMatching, P } from "ts-pattern"
 import ClientMessage from "../bindings/client"
 import { lookup } from "geoip-lite"
@@ -225,6 +225,58 @@ app.get('/link/:linkId', async (req: Request<{linkId: string}>, res) => {
         return
     }
     res.redirect(urlResult.value.url)
+})
+
+interface DistRequest extends AuthorizedRequest {
+    params: {linkId: string}
+}
+
+app.get("/link/dist/:linkId", authHandler, async (req: DistRequest, res: Response<ServerMessage>) => {
+    let userId = req.userId as number
+    let err: ServerError = {errorMessage: "Didn't get the right format for recieving country distribution."}
+    if (!isMatching({linkId: P.string}, req.params)) {
+        res.send(err).end()
+        return
+    }
+
+    let linkId = parseInt(req.params.linkId)
+    if (isNaN(linkId)) {
+        res.send(err).end()
+        return
+    }
+
+    let linkResult = await intoResultAsync(async () => await prisma.link.findUnique({where: {id: linkId}}))
+    if (!linkResult.ok || linkResult.value == null || linkResult.value.ownerId != userId) {
+        err = {errorMessage: "Link doesn't exist"}
+        res.send(err).end()
+        return
+    }
+
+    let distDataResult = await intoResultAsync(async () => await prisma.visit.groupBy({
+                                                                                by: ["country"], 
+                                                                                where: {linkId},
+                                                                                _count: {
+                                                                                    country: true
+                                                                                }
+                                                                            }))
+
+    if (!distDataResult.ok) {
+        err = {errorMessage: "Couldn't fetch visitation data"}
+        res.send(err).end()
+        return
+    }
+
+    let parsedDistData : CountryClickDist = {
+        countries: [],
+        clickDist: []
+    } 
+
+    distDataResult.value.forEach((data) => {
+        parsedDistData.countries.push(data.country)
+        parsedDistData.clickDist.push(data._count.country)
+    })
+
+    res.send(parsedDistData).end()
 })
 
 

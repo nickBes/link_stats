@@ -8,9 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "javascript-color-gradient": "^2.4.4",
     "js-cookie": "^3.0.1",
     "ky": "^0.31.0",
     "react": "^18.0.0",
+    "react-chartjs-2": "^4.2.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.3.0",
     "ts-pattern": "^4.0.3",
@@ -18,6 +20,7 @@
     "vite-tsconfig-paths": "^3.5.0"
   },
   "devDependencies": {
+    "@types/javascript-color-gradient": "^2.4.0",
     "@types/js-cookie": "^3.0.2",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",

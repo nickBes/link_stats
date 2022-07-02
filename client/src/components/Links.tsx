@@ -5,6 +5,7 @@ import { isMatching, P } from "ts-pattern"
 import ServerMessage from "@/bindings/server"
 import ky from "ky"
 import { DeleteLink } from "@/bindings/client"
+import { Link } from "react-router-dom"
 
 const linkPath = import.meta.env.VITE_SERVER_URL + '/link/'
 
@@ -45,7 +46,12 @@ const Links : React.FC = () => {
     <ul>
         {[...linkState].map(([id, url]) => {
             return (
-                <li key={id}>Number {id}:<br/> <a href={linkPath + id}>{url}</a><br/><button onClick={() => deleteLink(id)}>delete</button></li>
+                <li key={id}>
+                    <p>Number {id}:</p><br/>
+                    <a href={linkPath + id}>{url}</a><br/>
+                    <Link to={"/dashboard/stats/" + id}>Stats</Link><br/>                  
+                    <button onClick={() => deleteLink(id)}>delete</button>
+                </li>
             )
         })}
     </ul>

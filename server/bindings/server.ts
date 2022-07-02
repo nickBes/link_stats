@@ -64,7 +64,12 @@ export interface FetchedLinks {
     links: CreatedLink[]
 }
 
-type ServerMessage = JWT | ServerError | CreatedLink | FetchedLinks
+export interface CountryClickDist {
+    countries: string[]
+    clickDist: number[]
+}
+
+type ServerMessage = JWT | ServerError | CreatedLink | FetchedLinks | CountryClickDist
 
 export function throwIfError (serverMessage : ServerMessage) {
     if (isMatching({errorMessage: P.string}, serverMessage)) { // then error was detected

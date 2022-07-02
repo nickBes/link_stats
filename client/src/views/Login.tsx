@@ -36,7 +36,7 @@ const Login : React.FC = () => {
             
                     if (isMatching({token: P.string}, safeMessage)) { // then we recieved data of type JWT
                         Cookies.set('jwt', safeMessage.token, {expires: safeMessage.age})
-                        navigate('/', {replace: true})
+                        navigate('/dashboard', {replace: true})
                         jwt.token = safeMessage.token
                     } else {
                         throw `Recieved unexpected message from the server: ${safeMessage}`
