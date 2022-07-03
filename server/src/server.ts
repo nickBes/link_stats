@@ -227,13 +227,14 @@ app.get('/link/:linkId', async (req: Request<{linkId: string}>, res) => {
     res.redirect(urlResult.value.url)
 })
 
-interface DistRequest extends AuthorizedRequest {
-    params: {linkId: string}
+interface StatsRequest extends AuthorizedRequest {
+    linkId?: number
 }
 
-app.get("/link/dist/:linkId", authHandler, async (req: DistRequest, res: Response<ServerMessage>) => {
+const statsRequestHandler : RequestHandler = async (req: StatsRequest, res, next) => {
     let userId = req.userId as number
     let err: ServerError = {errorMessage: "Didn't get the right format for recieving country distribution."}
+    
     if (!isMatching({linkId: P.string}, req.params)) {
         res.send(err).end()
         return
@@ -251,6 +252,14 @@ app.get("/link/dist/:linkId", authHandler, async (req: DistRequest, res: Respons
         res.send(err).end()
         return
     }
+
+    req.linkId = linkId
+    next()
+}
+
+app.get("/link/dist/:linkId", authHandler, statsRequestHandler ,async (req: StatsRequest, res: Response<ServerMessage>) => {
+    let linkId = req.linkId as number
+    let err: ServerError
 
     let distDataResult = await intoResultAsync(async () => await prisma.visit.groupBy({
                                                                                 by: ["country"], 
@@ -279,6 +288,21 @@ app.get("/link/dist/:linkId", authHandler, async (req: DistRequest, res: Respons
     res.send(parsedDistData).end()
 })
 
+app.get("/link/series/:linkId", authHandler, statsRequestHandler, async (req: StatsRequest, res: Response<ServerMessage>) => {
+    let linkId = req.linkId as number
+    let err: ServerError
+
+    let dataSeriesResult = await intoResultAsync(async () => await prisma.visit.findMany({where: {linkId}, select: {date: true}}))
+    if (!dataSeriesResult.ok) {
+        err = {errorMessage: "Couldn't fetch series data"}
+        res.send(err).end()
+        return
+    }
+
+    res.send({series: dataSeriesResult.value.map(visit => visit.date.toJSON())}).end()
+    dataSeriesResult.value[0].date.toJSON()
+    console.log(dataSeriesResult)
+})
 
 if (process.env.JWT_SECRET != undefined) {
     app.listen(5000)

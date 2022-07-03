@@ -4,17 +4,17 @@ interface RawResult {
     ok: boolean
 }
 
-interface ResultError extends RawResult {
+export interface ResultError extends RawResult {
     ok: false,
     error: unknown
 }
 
-interface ResultValue<T> extends RawResult {
+export interface ResultValue<T> extends RawResult {
     ok: true,
     value: T
 }
 
-type Result <T> = ResultError | ResultValue<T>
+export type Result <T> = ResultError | ResultValue<T>
 
 function intoOk<T> (value: T) : ResultValue<T> {
     return {ok: true, value}
@@ -69,7 +69,11 @@ export interface CountryClickDist {
     clickDist: number[]
 }
 
-type ServerMessage = JWT | ServerError | CreatedLink | FetchedLinks | CountryClickDist
+export interface ClickTimeSeries {
+    series: string[]
+}
+
+type ServerMessage = JWT | ServerError | CreatedLink | FetchedLinks | CountryClickDist | ClickTimeSeries
 
 export function throwIfError (serverMessage : ServerMessage) {
     if (isMatching({errorMessage: P.string}, serverMessage)) { // then error was detected
