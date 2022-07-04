@@ -64,9 +64,13 @@ export interface FetchedLinks {
     links: CreatedLink[]
 }
 
+interface CountryClick {
+    country: string
+    count: number
+}
+
 export interface CountryClickDist {
-    countries: string[]
-    clickDist: number[]
+    dist: CountryClick[]
 }
 
 export interface ClickTimeSeries {

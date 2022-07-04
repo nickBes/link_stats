@@ -276,13 +276,11 @@ app.get("/link/dist/:linkId", authHandler, statsRequestHandler ,async (req: Stat
     }
 
     let parsedDistData : CountryClickDist = {
-        countries: [],
-        clickDist: []
+        dist: []
     } 
 
     distDataResult.value.forEach((data) => {
-        parsedDistData.countries.push(data.country)
-        parsedDistData.clickDist.push(data._count.country)
+        parsedDistData.dist.push({country: data.country, count: data._count.country})
     })
 
     res.send(parsedDistData).end()
@@ -300,8 +298,6 @@ app.get("/link/series/:linkId", authHandler, statsRequestHandler, async (req: St
     }
 
     res.send({series: dataSeriesResult.value.map(visit => visit.date.toJSON())}).end()
-    dataSeriesResult.value[0].date.toJSON()
-    console.log(dataSeriesResult)
 })
 
 if (process.env.JWT_SECRET != undefined) {
