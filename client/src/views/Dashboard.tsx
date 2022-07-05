@@ -8,7 +8,6 @@ const Dashboard : React.FC = () => {
         <Auth>
             <>
                 <Links/>
-                <CreateLink/>
             </>
         </Auth>
     )

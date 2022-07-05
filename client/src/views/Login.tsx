@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom"
 import { isMatching, P } from "ts-pattern"
 import { jwt } from "@/states"
 import { useSnapshot } from "valtio"
+import { Container } from "@mui/system"
+import { Button, TextField, Stack, Card, CardContent, CardHeader, Typography } from "@mui/material"
 
 const loginPath = import.meta.env.VITE_SERVER_URL + '/auth/login'
 
@@ -17,7 +19,7 @@ const Login : React.FC = () => {
 
     useEffect(() => {
         if (jwtState.token != null) {
-            navigate('/', {replace: true})
+            navigate('/dashboard', {replace: true})
         }
 
         async function login (event: SubmitEvent) {
@@ -50,14 +52,21 @@ const Login : React.FC = () => {
     })
 
     return (
-        <>
-            <p>This is the login page</p>
-            <form ref={form}>
-                <input type='text' name='username' placeholder='username'/>
-                <input type='password' name='password' placeholder='password'/>
-                <button type='submit'>Submit</button>
-            </form>
-        </>
+        <Container sx={{display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%"}}>
+            <Card raised sx={{width: {xs: "75%", md: "45%"}}}>
+                <CardHeader titleTypographyProps={{align: "center", sx: {fontWeight: "bold"}}} title="Login Form"/>
+                <CardContent>
+                    <form ref={form}>
+                        <Stack spacing={2}>
+                            <TextField required type='text' name='username' label='Username'/>
+                            <TextField required type='password' name='password' label='Password'/>
+                            <Button size="large" variant="contained" type='submit'>Submit</Button>
+                        </Stack>
+                    </form>
+                </CardContent>
+
+            </Card>
+        </Container>
     )
 }
 

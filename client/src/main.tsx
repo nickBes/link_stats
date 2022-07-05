@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import App from './App'
@@ -6,6 +6,7 @@ import Login from './views/Login'
 import Register from  './views/Register'
 import Stats from './views/Stats'
 import Dashboard from './views/Dashboard'
+import "@/styles/global.scss"
 
 const Main : React.FC = () => {
     return (

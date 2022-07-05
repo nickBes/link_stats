@@ -120,19 +120,19 @@ app.post('/link/', authHandler , async (req: AuthorizedRequest, res) => {
     let userId = req.userId as number
     let err: ServerError
 
-    if (!isMatching({url: P.string}, req.body)) {
+    if (!isMatching({url: P.string}, req.body) || req.body.url == "") {
         err = {errorMessage: "Haven't recieved the right format for creating a new link"}
         res.send(err).end()
         return
     }
 
-    let isValidUrl = await urlExists(req.body.url)
-    if (!isValidUrl) {
+    let url = req.body.url
+    let isValidUrlResult = await intoResultAsync(async () => await urlExists(url))
+    if (!isValidUrlResult.ok || !isValidUrlResult.value) {
         err = {errorMessage: "The given URL isn't valid"}
         res.send(err).end()
         return
     }
-    let url = req.body.url
 
     let urlResult = await intoResultAsync(async () => await prisma.link.create({data: {url, ownerId: userId}}))
 

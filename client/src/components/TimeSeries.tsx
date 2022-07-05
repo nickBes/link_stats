@@ -68,8 +68,6 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
             })
         }
 
-        console.log(dateMap)
-
         return Array.from(dateMap).map(([date, count]) => {
             return {
                 x: date.getTime(),
