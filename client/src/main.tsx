@@ -7,6 +7,7 @@ import Register from  './views/Register'
 import Stats from './views/Stats'
 import Dashboard from './views/Dashboard'
 import "@/styles/global.scss"
+import Home from './views/Home'
 
 const Main : React.FC = () => {
     return (
@@ -14,6 +15,7 @@ const Main : React.FC = () => {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<App/>}>
+                        <Route path="/" element={<Home/>}/>
                         <Route path="/login" element={<Login/>}/>
                         <Route path="/register" element={<Register/>}/>
                         <Route path="/dashboard/stats">
