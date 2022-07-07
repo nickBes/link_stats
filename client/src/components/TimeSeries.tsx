@@ -37,7 +37,7 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
         let now = new Date(Date.now())
         let filteredDates = dateState?.filter(date => date.getFullYear() == now.getFullYear() || date.getMonth() == now.getMonth())
         let dateGroup = new Date(now.getFullYear(), now.getMonth())
-        let dateMap: Map<Date, number> = new Map()
+        let dateMap: Map<number, number> = new Map()
 
         if (isMatching("minute", timeUnit)) {
             filteredDates = filteredDates?.filter(date => date.getHours() == now.getHours() || date.getDate() == now.getDate())
@@ -47,8 +47,8 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
                 dateGroup.setHours(date.getHours())
                 dateGroup.setMinutes(date.getMinutes())
 
-                let count = dateMap.get(dateGroup) ?? 0
-                dateMap.set(dateGroup, count + 1)
+                let count = dateMap.get(dateGroup.getTime()) ?? 0
+                dateMap.set(dateGroup.getTime(), count + 1)
             })
         } else if (isMatching("hour", timeUnit)) {
             filteredDates = filteredDates?.filter(date => date.getDate() == now.getDate())
@@ -56,21 +56,21 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
                 dateGroup.setDate(date.getDate())
                 dateGroup.setHours(date.getHours())
 
-                let count = dateMap.get(dateGroup) ?? 0
-                dateMap.set(dateGroup, count + 1)
+                let count = dateMap.get(dateGroup.getTime()) ?? 0
+                dateMap.set(dateGroup.getTime(), count + 1)
             })
         } else if (isMatching("day", timeUnit)) {
             filteredDates?.forEach(date => {
                 dateGroup.setDate(date.getDate())
 
-                let count = dateMap.get(dateGroup) ?? 0
-                dateMap.set(dateGroup, count + 1)
+                let count = dateMap.get(dateGroup.getTime()) ?? 0
+                dateMap.set(dateGroup.getTime(), count + 1)
             })
         }
 
         return Array.from(dateMap).map(([date, count]) => {
             return {
-                x: date.getTime(),
+                x: date,
                 y: count
             }
         })
@@ -103,7 +103,7 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
                 {Object.keys(TimeOptions).map(option => <option key={option} value={option}>Last {option}</option>)}
             </select>
             <VictoryChart scale={{x: "time", y: "linear"}} theme={VictoryTheme.material}>
-                <VictoryBar barRatio={1} data={createDateSeries()}/>
+                <VictoryBar data={createDateSeries()}/>
             </VictoryChart>
         </>
     )

@@ -8,7 +8,7 @@ import { DeleteLink } from "@/bindings/client"
 import { Link } from "react-router-dom"
 import TextTruncate from "react-text-truncate"
 import { Delete } from "@mui/icons-material"
-import { Divider, IconButton, LinearProgress, List, ListItem, ListItemButton, ListItemText } from "@mui/material"
+import { Divider, IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material"
 import { Container } from "@mui/system"
 import CreateLink from "./CreateLink"
 
@@ -61,10 +61,6 @@ const Links : React.FC = () => {
                                     <ListItemText><TextTruncate text={url}/></ListItemText>
                                 </Link>
                             </ListItemButton>
-                            {/* <p>Number {id}:</p><br/>
-                            <a href={linkPath + id}></a><br/>
-                            <Link to={"/dashboard/stats/" + id}>Stats</Link><br/>                  
-                            <button onClick={() => deleteLink(id)}>delete</button> */}
                         </ListItem>
                     )
                 })}

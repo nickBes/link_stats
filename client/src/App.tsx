@@ -1,13 +1,18 @@
-import React from "react"
+import React, { useState } from "react"
 import { useSnapshot } from "valtio"
 import { jwt, links } from "./states"
 import { Link, Outlet } from "react-router-dom"
 import Cookies from "js-cookie"
-import { Button, Typography, Stack, Box } from "@mui/material"
+import { Button, Typography, Stack, Box, Divider } from "@mui/material"
 import { Dashboard, Login as LoginIcon, Logout, GitHub } from "@mui/icons-material"
+import LoginDialog from "./components/LoginDialog"
+import RegisterDialog from "./components/RegisterDialog"
+
 
 const App : React.FC = () => {
     const jwtState = useSnapshot(jwt)
+    const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false)
+    const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false)
 
     function logout() {
         Cookies.remove('jwt')
@@ -28,8 +33,8 @@ const App : React.FC = () => {
                         <Button endIcon={<Logout/>} color="error" onClick={logout}>LogOut</Button>
                     </> :
                     <>
-                        <Button><Link to="/register">Register</Link></Button>
-                        <Button endIcon={<LoginIcon/>}><Link to="/login">Login</Link></Button>
+                        <Button onClick={() => setIsRegisterDialogOpen(true)}>Register</Button>
+                        <Button endIcon={<LoginIcon/>} onClick={() => setIsLoginDialogOpen(true)}>Login</Button>
                     </>}
                 </Stack>
                 <Box flexGrow={1} width="100%">
@@ -39,6 +44,11 @@ const App : React.FC = () => {
                     <Typography>Please Contribute</Typography>
                     <GitHub/>
                 </Box>
+                {jwtState.token == null && 
+                <>
+                    <LoginDialog onClose={() => setIsLoginDialogOpen(false)} isOpen={isLoginDialogOpen}/>
+                    <RegisterDialog onClose={() => setIsRegisterDialogOpen(false)} isOpen={isRegisterDialogOpen}/>
+                </>}
             </Stack>
         </>
     )
