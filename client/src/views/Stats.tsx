@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react"
 import { useParams } from "react-router"
 import Pie from "@/components/Pie"
 import TimeSeries from "@/components/TimeSeries"
+import { Stack } from "@mui/material"
 
 const Stats : React.FC = () => {
     const params = useParams()
@@ -19,8 +20,12 @@ const Stats : React.FC = () => {
         <Auth>
             <>
                 {linkId != null && <>
-                    <Pie linkId={linkId}/>
-                    <TimeSeries linkId={linkId}/>
+                    <Stack alignContent="center" alignItems="center">
+                        <Stack direction={{xs: "column", md: "row"}} spacing={2}>
+                            <Pie linkId={linkId}/>
+                            <TimeSeries linkId={linkId}/>
+                        </Stack>
+                    </Stack>
                 </>}
                 
             </>

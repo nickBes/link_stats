@@ -5,6 +5,7 @@ import { isMatching, P } from "ts-pattern"
 import ky from "ky"
 import { useSnapshot } from "valtio"
 import { jwt } from "@/states"
+import { Card, CardContent, CardHeader, CardMedia, Stack } from "@mui/material"
 
 interface PieProps {
     linkId: number
@@ -40,8 +41,17 @@ const Pie : React.FC<PieProps> = ({linkId}) => {
 
         fetchDist()
     }, [])
+
+    const chartData = distIntoChartData()
+
     return (
-        <VictoryPie data={distIntoChartData()} theme={VictoryTheme.material} colorScale="qualitative"/>
+        <Card variant="outlined">
+            <CardHeader title="Click Distribution By Country"/>
+            {chartData.length == 0 ? 
+            <CardContent><Stack alignItems="center" justifyContent="center">Not enough data</Stack></CardContent> : 
+            <CardMedia><VictoryPie data={chartData} theme={VictoryTheme.material} colorScale="qualitative"/></CardMedia>
+            }
+        </Card>
     )
 }
 

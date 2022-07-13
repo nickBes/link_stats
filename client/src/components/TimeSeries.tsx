@@ -5,6 +5,7 @@ import {isMatching, P} from "ts-pattern"
 import { useSnapshot } from "valtio"
 import { jwt } from "@/states"
 import ky from "ky"
+import { Card, CardHeader, CardMedia, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Stack } from "@mui/material"
 
 interface TimeSeriesProps {
     linkId: number
@@ -24,11 +25,13 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
     const jwtState = useSnapshot(jwt)
     const [dateState, setDateState] = useState<Date[] | null>(null)
     const [timeUnit, setTimeUnit] = useState<TimeUnit>("minute")
+    const [timeOption, setTimeOption] = useState<string>("Hour")
 
-    const handleTimeUnitChange = (e: ChangeEvent<HTMLSelectElement>) => {
-        let val = e.currentTarget.value
+    const handleTimeUnitChange = (e: SelectChangeEvent<string>) => {
+        let val = e.target.value
         let unit = TimeOptions[val]
         if (unit != undefined) {
+            setTimeOption(val)
             setTimeUnit(unit)
         }
     }
@@ -98,14 +101,22 @@ const TimeSeries : React.FC<TimeSeriesProps> = ({linkId}) => {
     }, [])
 
     return (
-        <>
-            <select onChange={handleTimeUnitChange}>
-                {Object.keys(TimeOptions).map(option => <option key={option} value={option}>Last {option}</option>)}
-            </select>
-            <VictoryChart scale={{x: "time", y: "linear"}} theme={VictoryTheme.material}>
-                <VictoryBar data={createDateSeries()}/>
-            </VictoryChart>
-        </>
+        <Card variant="outlined">
+            <CardHeader title="Click Distribution Over Time"/>
+            <CardMedia>
+                <Stack alignItems="center" justifyContent="center">
+                    <FormControl>
+                        <InputLabel id="time-unit-select">Time Range</InputLabel>
+                        <Select value={timeOption} labelId="time-unit-select" label="Time Range" onChange={handleTimeUnitChange}>
+                            {Object.keys(TimeOptions).map(option => <MenuItem key={option} value={option}>Last {option}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <VictoryChart scale={{x: "time", y: "linear"}} theme={VictoryTheme.material}>
+                        <VictoryBar data={createDateSeries()}/>
+                    </VictoryChart>
+                </Stack>
+            </CardMedia>
+        </Card>
     )
 }
 
